@@ -1,6 +1,6 @@
 {
   "name": "@bigegg/work-wechat",
-  "version": "1.0.0",
+  "version": "1.0.2",
   "description": "",
   "main": "bin/index.js",
   "scripts": {
@@ -15,10 +15,10 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/bigegg-software/work-wechat.git"
+    "url": "git+https://github.com/bigegg-software/work_wechat.git"
   },
   "bugs": {
-    "url": "https://github.com/bigegg-software/work-wechat/issues"
+    "url": "https://github.com/bigegg-software/work_wechat/issues"
   },
-  "homepage": "https://github.com/bigegg-software/work-wechat#readme"
+  "homepage": "https://github.com/bigegg-software/work_wechat#readme"
 }

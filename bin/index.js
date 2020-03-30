@@ -79,6 +79,7 @@ class QYWX {
         token = token || await this._getToken()
         let userInfo = await fetch(`https://qyapi.weixin.qq.com/cgi-bin/user/get?access_token=${token}&userid=${userid}`)
         userInfo = await userInfo.json();
+        return userInfo
     }
     async getAccessToken() {
         let data = await fetch(`https://qyapi.weixin.qq.com/cgi-bin/gettoken?corpid=${this.wechatAppId}&corpsecret=${this.wechatSecrect}`)
