@@ -27,6 +27,9 @@ class QYWX {
         this.redirectUrl = opt.redirectUrl;
         this.wechatSecrect = opt.wechatSecrect
         this.isStore = opt.isStore;
+        this.wechatMessageToken = opt.wechatMessageToken, 
+        this.encodingAESKey = opt.encodingAESKey
+
         this.key = opt.key || 'QYWX_TOKEN_REDIS';
         if (opt.redis) {
             this.store = opt.redis
@@ -124,7 +127,7 @@ class QYWX {
         var sVerifyTimeStamp = info.timestamp;
         var sVerifyNonce = info.nonce;
         var sVerifyEchoStr = decodeURIComponent(info.echostr);
-        var cryptor = new WXBizMsgCrypt(wechatMessageToken, EncodingAESKey, AGENTID); //todo
+        var cryptor = new WXBizMsgCrypt(this.wechatMessageToken, this.encodingAESKey, this.agentid); //todo
 
         var MsgSig = cryptor.getSignature(sVerifyTimeStamp, sVerifyNonce, sVerifyEchoStr);
         if (sVerifyMsgSig == MsgSig) {
@@ -142,7 +145,7 @@ class QYWX {
         var sVerifyNonce = info.nonce;
         var sVerifyEchoStr = decodeURIComponent(info.echostr);
 
-        var cryptor = new WXBizMsgCrypt(wechatMessageToken, EncodingAESKey, AGENTID); //todo
+        var cryptor = new WXBizMsgCrypt(this.wechatMessageToken, this.encodingAESKey, this.agentid); //todo
 
         let buffInfo = await wechatTool.loadString(req)
         var xml = buffInfo.toString('utf-8');
