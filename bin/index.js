@@ -190,7 +190,7 @@ class QYWX {
     }
     async getDepartment(id){
         token = token || await this._getToken()
-        let url = `https://qyapi.weixin.qq.com/cgi-bin/oa/getapprovaldetail?access_token=${token}`;
+        let url = `https://qyapi.weixin.qq.com/cgi-bin/department/list?access_token=${token}`;
         if(id != undefined){
             url +=  `&id=${id}`
         }
