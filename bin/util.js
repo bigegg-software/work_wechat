@@ -1,3 +1,5 @@
+var xml2js = require('xml2js');
+
 async function xmlParse(xml) {
     return new Promise(reslove => {
       xml2js.parseString(xml, {

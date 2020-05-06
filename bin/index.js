@@ -139,7 +139,7 @@ class QYWX {
     }
 
     async handleMessage(req) {
-        let info = req.body
+        let info = req.query
         var sVerifyMsgSig = info.msg_signature;
         var sVerifyTimeStamp = info.timestamp;
         var sVerifyNonce = info.nonce;
@@ -147,7 +147,7 @@ class QYWX {
 
         var cryptor = new WXBizMsgCrypt(this.wechatMessageToken, this.encodingAESKey, this.agentid); //todo
 
-        let buffInfo = await wechatTool.loadString(req)
+        let buffInfo = await this.loadString(req)
         var xml = buffInfo.toString('utf-8');
         var result = await Util.xmlParse(xml)
         xml = Util.formatMessage(result.xml);
@@ -168,9 +168,10 @@ class QYWX {
         if (!result) {
             return '-40005_Invalid corpId'
         }
+        var message = Util.formatMessage(result.xml);
 
         
-        return xml
+        return message
 
         
     }
@@ -187,5 +188,17 @@ class QYWX {
         approvalDetail = await approvalDetail.json();
         return approvalDetail
     }
+    async getDepartment(id){
+        token = token || await this._getToken()
+        let url = `https://qyapi.weixin.qq.com/cgi-bin/oa/getapprovaldetail?access_token=${token}`;
+        if(id != undefined){
+            url +=  `&id=${id}`
+        }
+        let approvalDetail = await fetch(url)
+        approvalDetail = await approvalDetail.json();
+        return approvalDetail
+    }
+
+
 }
 module.exports = QYWX
