@@ -188,7 +188,7 @@ class QYWX {
         approvalDetail = await approvalDetail.json();
         return approvalDetail
     }
-    async getDepartment(id){
+    async getDepartment(id,token){
         token = token || await this._getToken()
         let url = `https://qyapi.weixin.qq.com/cgi-bin/department/list?access_token=${token}`;
         if(id != undefined){
