@@ -3,8 +3,9 @@ const sha1 = require('sha1')
 const CronJob = require('cron').CronJob;
 const fetch = require('node-fetch')
 var WXBizMsgCrypt = require('wechat-crypto');
-var Util = require('./util')
-
+var Util = require('./util');
+const request = require('request');
+const fs = require('fs')
 
 class Store {
     constructor() {
@@ -23,12 +24,13 @@ class QYWX {
 
     constructor(opt) {
         this.agentid = opt.agentid;
+        this.appSecrect = opt.appSecrect;
         this.wechatAppId = opt.wechatAppId;
         this.redirectUrl = opt.redirectUrl;
         this.wechatSecrect = opt.wechatSecrect
         this.isStore = opt.isStore;
-        this.wechatMessageToken = opt.wechatMessageToken, 
-        this.encodingAESKey = opt.encodingAESKey
+        this.wechatMessageToken = opt.wechatMessageToken,
+            this.encodingAESKey = opt.encodingAESKey
 
         this.key = opt.key || 'QYWX_TOKEN_REDIS';
         if (opt.redis) {
@@ -65,17 +67,17 @@ class QYWX {
     }
     loadString(stream) {
         return new Promise((reslove, reject) => {
-          var buffers = [];
-          stream.on('data', function (trunk) {
-            buffers.push(trunk)
-          });
-          stream.on('end', function () {
-              reslove(Buffer.concat(buffers))
-            // callback(null, Buffer.concat(buffers));
-          });
-          stream.once('error', reslove);  
+            var buffers = [];
+            stream.on('data', function (trunk) {
+                buffers.push(trunk)
+            });
+            stream.on('end', function () {
+                reslove(Buffer.concat(buffers))
+                // callback(null, Buffer.concat(buffers));
+            });
+            stream.once('error', reslove);
         })
-      }
+    }
 
     sign(ticket, noncestr, timestamp, url) {
         let info = `jsapi_ticket=${ticket}&noncestr=${noncestr}&timestamp=${timestamp}&url=${url}`
@@ -103,11 +105,16 @@ class QYWX {
     async getAccessToken() {
         let data = await fetch(`https://qyapi.weixin.qq.com/cgi-bin/gettoken?corpid=${this.wechatAppId}&corpsecret=${this.wechatSecrect}`)
         let result = await data.json()
-        console.log(result)
         await this._saveToken(result.access_token)
 
         return result
     }
+    async getAppAccessToken() {
+        let data = await fetch(`https://qyapi.weixin.qq.com/cgi-bin/gettoken?corpid=${this.wechatAppId}&corpsecret=${this.appSecrect}`)
+        let result = await data.json()
+        return result
+    }
+
     async getAgentTicket(token) {
         token = token || await this._getToken()
         let data = await fetch(`https://qyapi.weixin.qq.com/cgi-bin/ticket/get?access_token=${token}&type=agent_config`)
@@ -170,35 +177,122 @@ class QYWX {
         }
         var message = Util.formatMessage(result.xml);
 
-        
+
         return message
 
-        
+
     }
-    async getApprovalDetail(sp_no, token){
+    async getApprovalDetail(sp_no, token) {
 
         token = token || await this._getToken()
-        let approvalDetail = await fetch(`https://qyapi.weixin.qq.com/cgi-bin/oa/getapprovaldetail?access_token=${token}`,{
+        let approvalDetail = await fetch(`https://qyapi.weixin.qq.com/cgi-bin/oa/getapprovaldetail?access_token=${token}`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
-                "sp_no" : sp_no
+                "sp_no": sp_no
             })
         })
         approvalDetail = await approvalDetail.json();
         return approvalDetail
     }
-    async getDepartment(id,token){
+
+    async getApprovalTemDetail(template_id, token) {
+        token = token || await this._getToken()
+
+        let result = await fetch(`https://qyapi.weixin.qq.com/cgi-bin/oa/gettemplatedetail?access_token=${token}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                template_id: template_id
+            })
+        })
+
+        result = await result.json();
+
+        return result
+
+    }
+    async createApproval(info, token) {
+
+        token = token || await this._getToken()
+
+        let result = await fetch(`https://qyapi.weixin.qq.com/cgi-bin/oa/applyevent?access_token=${token}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(info)
+        })
+        result = await result.json();
+        return result
+    }
+
+    async getDepartment(id, token) {
         token = token || await this._getToken()
         let url = `https://qyapi.weixin.qq.com/cgi-bin/department/list?access_token=${token}`;
-        if(id != undefined){
-            url +=  `&id=${id}`
+        if (id != undefined) {
+            url += `&id=${id}`
+        }
+        let approvalDetail = await fetch(url)
+        approvalDetail = await approvalDetail.json();
+        return approvalDetail
+    }
+    async getDepartmentUserList(department_id, fetch_child = 0, token){
+        
+        token = token || await this._getToken()
+        let url = `https://qyapi.weixin.qq.com/cgi-bin/user/simplelist?access_token=${token}&department_id=${department_id}&fetch_child=${fetch_child}`;
+        if (id != undefined) {
+            url += `&id=${id}`
         }
         let approvalDetail = await fetch(url)
         approvalDetail = await approvalDetail.json();
         return approvalDetail
     }
 
+    async updateMedia(imagePath, token) {
+        let imgStram = fs.createReadStream(imagePath);
+        
+        token = token || await this._getToken();
+        const url = `https://qyapi.weixin.qq.com/cgi-bin/media/upload?access_token=${token}&type=image`;
+        return new Promise((resolve, reject) => {
+            const req = request.post(
+                {
+                    url,
+                    headers: {
+                        accept: '*/*',
+                    },
+                },
+                (err, res) => {
+                    if (err) {
+                        console.log(err)
+                        reject(err);
+                    }
 
+                    try {
+                        
+                        const resData = JSON.parse(res.body); //里面带有返回的media_id
+                        resolve(resData);
+                    } catch (e) {
+                        console.log(e)
+                    }
+                },
+            );
+
+            let form = req.form();
+            form.append('media', imgStram);
+            form.append('hack', '');  //微信服务器的bug，需要hack一下才能识别到对象
+        });
+
+    }
+    async getcheckindata(info, token){
+        token = token || await this._getToken()
+        let url = `https://qyapi.weixin.qq.com/cgi-bin/checkin/getcheckindata?access_token=${token}`;
+        
+        let checkinDate = await fetch(url,{
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(info)
+        })
+        checkinDate = await checkinDate.json();
+        return checkinDate
+    }
 }
 module.exports = QYWX
