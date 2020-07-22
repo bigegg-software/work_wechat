@@ -239,12 +239,9 @@ class QYWX {
         
         token = token || await this._getToken()
         let url = `https://qyapi.weixin.qq.com/cgi-bin/user/simplelist?access_token=${token}&department_id=${department_id}&fetch_child=${fetch_child}`;
-        if (id != undefined) {
-            url += `&id=${id}`
-        }
-        let approvalDetail = await fetch(url)
-        approvalDetail = await approvalDetail.json();
-        return approvalDetail
+        let departmentUserList = await fetch(url)
+        departmentUserList = await departmentUserList.json();
+        return departmentUserList
     }
 
     async updateMedia(imagePath, token) {
